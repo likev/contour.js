@@ -1,0 +1,152 @@
+<!doctype html>
+<html>
+<head>
+<meta charset='utf-8'>
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+
+<title> Javascript绘制等值线</title>
+
+<style>
+*{
+	margin:0;
+	padding:0;
+}
+html,body {
+	height:100%;
+}
+#container {
+	position:relative;
+	height:100%;
+}
+
+#tips{
+	height:10%;
+	overflow:hidden;
+}
+#tips h2{
+	color:blue;
+	margin:20px;
+}
+#map_canvas {
+	height:90%;
+	width:100%;
+}
+</style>
+<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.7/jquery.min.js'></script>
+<script src='Contour.js'></script>
+<script src='diamond4.js'></script>
+
+<script type="text/javascript"
+    src="https://maps.google.com/maps/api/js?sensor=false">
+</script>
+<script type="text/javascript">
+  
+  $(function(){
+	//initialize_map()
+    var latlng = new google.maps.LatLng(34.397, 115.644);
+    var myOptions = {
+      zoom: 6,
+      center: latlng,
+      mapTypeId: google.maps.MapTypeId.TERRAIN
+    };
+    window.map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+
+
+	for(var lat=10; lat <= 80; lat += 2.5){
+	
+		var flightPath = new google.maps.Polyline({
+			path: [new google.maps.LatLng(lat, 30), new google.maps.LatLng(lat, 160)],
+			strokeColor: "#666666",
+			strokeOpacity: 0.8,
+			strokeWeight: 1
+		});
+
+		flightPath.setMap(map);
+	
+	}
+	for(var lon = 30; lon <=160; lon += 2.5){
+	
+		var flightPath = new google.maps.Polyline({
+			path: [new google.maps.LatLng(10, lon), new google.maps.LatLng(80, lon)],
+			strokeColor: "#666666",
+			strokeOpacity: 0.8,
+			strokeWeight: 1
+		});
+
+		flightPath.setMap(map);
+	
+	}
+
+})
+</script>
+	
+<script>
+	$(function(){
+		if (!window.FileReader){
+			$('#container').text('你的浏览器不支持拖放操作啊，同学!');
+			return;
+		}
+		
+		$('#container').on({
+			'dragenter': function(){//处理拖动进入事件
+				//$(this).css({'border-style': 'dashed'});
+			},
+			'dragleave': function(){//处理拖动离开事件
+				//$(this).css({'border-style': 'solid'});
+			},
+			'dragover': function(){//处理拖动移动事件
+				return false;
+			},
+			'drop': function(evt){//处理释放事件
+			
+				var file = evt.originalEvent.dataTransfer.files[0];
+				
+				var reader = new FileReader();
+				
+				reader.onload = function(e){
+					
+					var diamond4file = diamond4(e.target.result);
+					
+					var con = new Contour(diamond4file.data);
+
+					con.setContourLevel(diamond4file.levels);
+					var all_iso_line = con.track();
+
+					
+					for(var i in all_iso_line){
+						var line = all_iso_line[i].path;
+						var apath = [];
+						for(var j=0; j< line.length; j++){
+							apath.push(new google.maps.LatLng(line[j].x, line[j].y) );
+						}
+						
+						 var flightPath = new google.maps.Polyline({
+							path: apath,
+							strokeColor: "#0000FF",
+							strokeOpacity: 1.0,
+							strokeWeight: 2
+						});
+
+						flightPath.setMap(map);
+					}
+				}
+				reader.readAsText(file);
+				
+				return false;
+			}
+		})
+	})
+</script>
+</head>
+
+<body>
+<div id='container'>
+	<div id='tips'>
+		<h2>将Micaps第四类数据格式文件拖入下面的地图中，即可在地图上查看等值线</h2>
+	</div>
+	<div id='map_canvas'>
+	</div>
+</div>
+</body>
+</html>
+
